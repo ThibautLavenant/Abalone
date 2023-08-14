@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -45,10 +46,70 @@ namespace Abalone.UI
         private Coordinates _startCoordinate;
         private void OnCellClicked(object? sender, Coordinates e)
         {
-            Grid.SetRow(MoveArrows, e.x);
-            Grid.SetColumn(MoveArrows, e.y * 2 + 4 - e.x);
-            _startCoordinate = new Coordinates(e.x, e.y);
-            MoveArrows.Visibility = Visibility.Visible;
+            if (_game.Board.BoardSpace[e.x, e.y] == _game.CurrentPlayer)
+            {
+                Grid.SetRow(MoveArrows, e.x);
+                Grid.SetColumn(MoveArrows, e.y * 2 + 4 - e.x);
+                _startCoordinate = new Coordinates(e.x, e.y);
+                var move = new Move()
+                {
+                    StartX = e.x,
+                    StartY = e.y,
+                };
+                MoveArrows.Visibility = Visibility.Visible;
+                
+                //Arrow A :
+                move.EndX = e.x + 1;
+                move.EndY = e.y;
+                SetArrowMoveRange(move);
+                ArrowA.Visibility = _game.IsMoveValid(move) ? Visibility.Visible : Visibility.Collapsed;
+
+                //Arrow B :
+                move.EndX = e.x + 1;
+                move.EndY = e.y + 1;
+                SetArrowMoveRange(move);
+                ArrowB.Visibility = _game.IsMoveValid(move) ? Visibility.Visible : Visibility.Collapsed;
+
+                //Arrow C :
+                move.EndX = e.x;
+                move.EndY = e.y + 1;
+                SetArrowMoveRange(move);
+                ArrowC.Visibility = _game.IsMoveValid(move) ? Visibility.Visible : Visibility.Collapsed;
+
+                //Arrow D :
+                move.EndX = e.x - 1;
+                move.EndY = e.y;
+                SetArrowMoveRange(move);
+                ArrowD.Visibility = _game.IsMoveValid(move) ? Visibility.Visible : Visibility.Collapsed;
+
+                //Arrow E :
+                move.EndX = e.x - 1;
+                move.EndY = e.y - 1;
+                SetArrowMoveRange(move);
+                ArrowE.Visibility = _game.IsMoveValid(move) ? Visibility.Visible : Visibility.Collapsed;
+
+                //Arrow F :
+                move.EndX = e.x;
+                move.EndY = e.y - 1;
+                SetArrowMoveRange(move);
+                ArrowF.Visibility = _game.IsMoveValid(move) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private void SetArrowMoveRange(Move move)
+        {
+            int currentX = move.StartX;
+            int currentY = move.StartY;
+            int vectorX = move.EndX - move.StartX;
+            int vectorY = move.EndY - move.StartY;
+            while (Abalone.Board.IsPositionValid(currentX, currentY) 
+                && _game.Board.BoardSpace[move.StartX, move.StartY] == _game.Board.BoardSpace[currentX, currentY])
+            {
+                currentX += vectorX;
+                currentY += vectorY;
+            }
+            move.RangeX = currentX - vectorX;
+            move.RangeY = currentY - vectorY;
         }
 
         private void DisplayGame(Game game)
@@ -59,6 +120,20 @@ namespace Abalone.UI
                 {
                     boardCells[x, y].SetPlayer(game.Board.BoardSpace[x, y]);
                 }
+            }
+            TurnColorText.Text = _game.CurrentPlayer.ToString();
+            LostBallBlack.Text = _game.LostBalls[EPlayer.BLACK].ToString();
+            LostBallWhite.Text = _game.LostBalls[EPlayer.WHITE].ToString();
+
+            if (_game.Winner != null)
+            {
+                WinnerDisplay.Visibility = Visibility.Visible;
+                WinnerColor.Text = _game.Winner.ToString();
+            }
+            else
+            {
+                WinnerDisplay.Visibility = Visibility.Collapsed;
+                WinnerColor.Text = "";
             }
         }
 
@@ -77,23 +152,28 @@ namespace Abalone.UI
                     int endY = _startCoordinate.y + moveY;
                     int rangeX = _startCoordinate.x;
                     int rangeY = _startCoordinate.y;
-                    while (_game.Board.BoardSpace[rangeX + moveX, rangeY + moveY] != null)
-                    {
-                        rangeX += moveX;
-                        rangeY += moveY;
-                    }
-                    _game.Board.ExecuteMove(new Move()
+                    var move = new Move()
                     {
                         StartX = _startCoordinate.x,
                         StartY = _startCoordinate.y,
                         EndX = endX,
                         EndY = endY,
-                        RangeX = rangeX,
-                        RangeY = rangeY,
-                    });
+                    };
+                    SetArrowMoveRange(move);
+                    _game.ExecuteMove(move);
                     await App.Current.Dispatcher.BeginInvoke(() => DisplayGame(_game));
                 });
             }
+        }
+
+        private void NewGame(object sender, RoutedEventArgs e)
+        {
+            MoveArrows.Visibility = Visibility.Collapsed;
+            Task.Run(async () =>
+            {
+                _game = new Game();
+                await App.Current.Dispatcher.BeginInvoke(() => DisplayGame(_game));
+            });
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Abalone
 {
-    public enum Player
+    public enum EPlayer
     {
         BLACK = 1,
         WHITE = 2,

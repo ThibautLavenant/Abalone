@@ -20,8 +20,25 @@ namespace Abalone.UI
     /// </summary>
     public partial class BoardCell : UserControl
     {
-        public int CoordX { get; set; }
-        public int CoordY { get; set; }
+        private int coordX;
+        private int coordY;
+
+        public int CoordX { 
+            get => coordX; 
+            set {
+                coordX = value;
+                SetCoordValue();
+            }
+        }
+
+        public int CoordY { 
+            get => coordY; 
+            set
+            {
+                coordY = value;
+                SetCoordValue();
+            }
+        }
         public EventHandler<Coordinates> CellClicked { get; set; }
 
         public BoardCell()
@@ -29,20 +46,28 @@ namespace Abalone.UI
             InitializeComponent();
         }
 
-        public void SetPlayer(Player? player)
+        public void SetPlayer(EPlayer? player)
         {
-            if (player == Player.BLACK)
+            if (player == EPlayer.BLACK)
             {
                 CellEllipse.Fill = Brushes.Black;
+                Coordinate.Foreground = Brushes.White;
             }
-            else if (player == Player.WHITE)
+            else if (player == EPlayer.WHITE)
             {
                 CellEllipse.Fill = Brushes.LightGray;
+                Coordinate.Foreground = Brushes.Black;
             }
             else
             {
                 CellEllipse.Fill = Brushes.Transparent;
+                Coordinate.Foreground = Brushes.Black;
             }
+        }
+
+        private void SetCoordValue()
+        {
+            Coordinate.Text = $"{CoordX},{CoordY}";
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
